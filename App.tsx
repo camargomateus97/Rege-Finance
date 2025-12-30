@@ -137,7 +137,7 @@ export default function App() {
         catMap[c.slug || c.id] = {
           id: c.id,
           label: c.label,
-          icon_name: c.icon_name,
+          iconName: c.icon_name,
           color: c.color,
           bg: c.bg,
           border: c.border,
