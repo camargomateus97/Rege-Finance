@@ -60,7 +60,11 @@ export function PrivacyPolicy({ onBack }: PrivacyPolicyProps) {
                     </section>
                 </div>
 
-                <p className="mt-8 text-center text-zinc-600 text-[10px] font-bold uppercase tracking-widest">
+                <p className="mt-8 text-center text-zinc-400 font-medium select-text">
+                    suporte@regefinance.com
+                </p>
+
+                <p className="mt-4 text-center text-zinc-600 text-[10px] font-bold uppercase tracking-widest">
                     Última atualização: Dezembro de 2025
                 </p>
             </div>
