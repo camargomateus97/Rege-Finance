@@ -1,0 +1,8 @@
+{
+  "name": "Rege Finance",
+  "description": "A minimalist, AI-powered financial management app with natural language processing, receipt scanning, and a spiritual touch for kingdom-minded budgeting.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
