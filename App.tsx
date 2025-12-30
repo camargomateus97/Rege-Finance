@@ -25,8 +25,8 @@ import { LoginPage } from './components/auth/LoginPage';
 
 import { SignUpPage } from './components/auth/SignUpPage';
 import { TermsOfUse } from './components/legal/TermsOfUse';
-import { PrivacyPolicy } from '../components/legal/PrivacyPolicy';
-import { ProfileModal } from '../components/profile/ProfileModal';
+import { PrivacyPolicy } from './components/legal/PrivacyPolicy';
+import { ProfileModal } from './components/profile/ProfileModal';
 
 // --- MAIN APP COMPONENT ---
 export default function App() {
