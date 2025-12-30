@@ -21,10 +21,10 @@ import { Transaction, TransactionType, Category, ChatMessage, ColorOption } from
 import { ICON_LIBRARY, DEFAULT_CATEGORIES, COLOR_PALETTE } from './constants';
 import { getDailyQuote, smartParseTransaction, chatWithAssistant, getExpenseTips } from './services/geminiService';
 
-import { LoginPage } from '../components/auth/LoginPage';
+import { LoginPage } from './components/auth/LoginPage';
 
-import { SignUpPage } from '../components/auth/SignUpPage';
-import { TermsOfUse } from '../components/legal/TermsOfUse';
+import { SignUpPage } from './components/auth/SignUpPage';
+import { TermsOfUse } from './components/legal/TermsOfUse';
 import { PrivacyPolicy } from '../components/legal/PrivacyPolicy';
 import { ProfileModal } from '../components/profile/ProfileModal';
 
