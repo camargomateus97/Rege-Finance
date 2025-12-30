@@ -3,12 +3,16 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { Transaction } from "../types";
 
 // Always use process.env.API_KEY directly as per guidelines
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const apiKey = process.env.API_KEY;
+if (!apiKey) {
+  console.error("❌ Erro Crítico: API Key do Gemini não encontrada! Verifique o arquivo .env.local e a variável GEMINI_API_KEY.");
+}
+const ai = new GoogleGenAI({ apiKey: apiKey || "MISSING_KEY" });
 
 export const getDailyQuote = async (): Promise<string> => {
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-1.5-flash",
       contents: "Gere um único provérbio, frase estoica ou versículo bíblico (com referência) curto e inspirador sobre sabedoria financeira, diligência, trabalho honesto ou prosperidade. Retorne apenas o texto da frase, sem introduções. Máximo 20 palavras.",
       config: {
         temperature: 0.8,
@@ -38,7 +42,7 @@ export const smartParseTransaction = async (input: string, base64Image: string |
     }
 
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-1.5-flash",
       contents: { parts },
       config: {
         responseMimeType: "application/json",
@@ -69,7 +73,7 @@ export const chatWithAssistant = async (history: any[], message: string, context
     const prompt = `Você é o Assistente Rege, um guru financeiro pessoal. Contexto do usuário (últimas transações e saldo): ${JSON.stringify(contextData)}. Pergunta do usuário: "${message}". Responda de forma concisa e útil em Português Brasileiro.`;
     
     const response = await ai.models.generateContent({
-      model: "gemini-3-pro-preview",
+      model: "gemini-1.5-flash",
       contents: prompt,
       config: {
         systemInstruction: "Você é amigável, direto ao ponto e focado em ajudar o usuário a poupar e investir melhor, respeitando os princípios de sabedoria financeira."
@@ -88,7 +92,7 @@ export const getExpenseTips = async (category: string, total: number, examples: 
     const prompt = `Rege Ai. Categoria de maior gasto: "${category}". Total gasto: R$${total}. Itens: ${examples.join(', ')}. Forneça 3 dicas CURTAS e PRÁTICAS para economizar especificamente nesta categoria.`;
     
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-1.5-flash",
       contents: prompt,
     });
 
