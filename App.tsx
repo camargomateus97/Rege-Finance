@@ -565,7 +565,7 @@ export default function App() {
             <button onClick={() => { setIsReportOpen(true); setAiTips(null); }} className="p-2.5 bg-zinc-900 border border-zinc-800 rounded-full text-zinc-400 hover:text-white transition-all">
               <LucidePieChart size={20} />
             </button>
-            <button onClick={() => setIsAssistantOpen(true)} className="p-2.5 bg-zinc-900 border border-zinc-800 rounded-full text-violet-400 hover:bg-violet-900/20 transition-all relative">
+            <button onClick={() => setIsAssistantOpen(true)} data-testid="rege-ia-btn" className="p-2.5 bg-zinc-900 border border-zinc-800 rounded-full text-violet-400 hover:bg-violet-900/20 transition-all relative">
               <Sparkles size={20} />
             </button>
           </div>
@@ -801,23 +801,37 @@ export default function App() {
                 ))}
                 {isChatLoading && (
                   <div className="flex justify-start">
-                    <div className="bg-zinc-900 text-zinc-500 px-5 py-3 rounded-2xl text-sm">
-                      <Loader2 className="animate-spin" size={16} />
+                    <div className="px-5 py-3 rounded-2xl bg-zinc-900 text-zinc-500 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                      <Loader2 size={12} className="animate-spin" /> Digitando...
                     </div>
                   </div>
                 )}
                 <div ref={chatEndRef} />
               </div>
-              <div className="p-8 pt-0 flex gap-2">
-                <input type="text" className="flex-1 bg-zinc-900 border border-zinc-800 text-white rounded-2xl px-5 py-4 text-sm focus:outline-none" placeholder="Pergunte qualquer coisa..." value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSendChatMessage()} />
-                <button onClick={handleSendChatMessage} className="p-4 bg-violet-600 text-white rounded-2xl">
-                  {isChatLoading ? <Loader2 className="animate-spin" size={20} /> : <Send size={20} />}
-                </button>
+              <div className="p-4 border-t border-zinc-900 bg-zinc-950">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSendChatMessage()}
+                    data-testid="chat-input"
+                    placeholder="Pergunte qualquer coisa..."
+                    className="w-full bg-zinc-900 text-white rounded-2xl py-4 pl-5 pr-14 focus:outline-none focus:ring-2 focus:ring-violet-600/50 transition-all font-medium"
+                  />
+                  <button
+                    onClick={handleSendChatMessage}
+                    disabled={!chatInput.trim() || isChatLoading}
+                    data-testid="chat-send-btn"
+                    className="absolute right-2 top-2 p-2 bg-violet-600 text-white rounded-xl hover:bg-violet-700 disabled:opacity-50 disabled:hover:bg-violet-600 transition-all"
+                  >
+                    <Send size={20} />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         )}
-
         {/* Modal: Analysis/Statistics */}
         {isReportOpen && (
           <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
