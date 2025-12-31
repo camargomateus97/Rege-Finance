@@ -1,6 +1,6 @@
 
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
-import { Transaction } from "../types";
+import { Transaction, ChatMessage } from "../types";
 
 // Always use process.env.API_KEY directly as per guidelines
 const apiKey = process.env.API_KEY || "";
@@ -75,30 +75,48 @@ export const smartParseTransaction = async (input: string, base64Image: string |
   }
 };
 
-export const chatWithAssistant = async (history: any[], message: string, contextData: any): Promise<string> => {
+export const chatWithAssistant = async (history: ChatMessage[], message: string, contextData: any): Promise<string> => {
   try {
-    // Note: To use history properly, you'd use startChat. 
-    // Adapting previous logic which was single-turn but took history arg.
-    // Enhanced to actually include history in the prompt context if needed, 
-    // but for now keeping it simple as a robust single turn with context.
-
-    // We can also initiate a chat session if we want multi-turn. 
-    // For now, let's stick to the prompt engineering approach to minimize risk of state issues,
-    // but fix the connection.
-
     const model = genAI.getGenerativeModel({
       model: "gemini-1.5-flash",
-      systemInstruction: "Você é o Assistente Rege, um guru financeiro pessoal. Você é amigável, direto ao ponto e focado em ajudar o usuário a poupar e investir melhor, respeitando os princípios de sabedoria financeira."
+      systemInstruction: `Você é o Rege, um assistente financeiro pessoal, sábio e amigável.
+      
+      SEU OBJETIVO:
+      Ajudar o usuário a organizar suas finanças, economizar dinheiro e investir com sabedoria.
+      Seja direto, empático e use emojis ocasionalmente para manter o tom leve.
+      
+      DADOS DO USUÁRIO AGORA:
+      ${JSON.stringify(contextData)}
+      
+      DIRETRIZES:
+      1. Responda em Português do Brasil.
+      2. Use formatação Markdown (negrito, listas) para facilitar a leitura.
+      3. Se o usuário perguntar sobre saldo ou transações, use os dados fornecidos acima.
+      4. Se não souber algo, admita e sugira como o usuário pode encontrar a informação.`
     });
 
-    const prompt = `Contexto do usuário (últimas transações e saldo): ${JSON.stringify(contextData)}. Pergunta do usuário: "${message}". Responda de forma concisa e útil em Português Brasileiro.`;
+    // Filtering history to exclude the very last message if it matches 'message' (which is the current user prompt)
+    const historyForGemini = history
+      .slice(0, history.length - 1)
+      .filter(h => h.role === 'user' || h.role === 'ai')
+      .map(msg => ({
+        role: msg.role === 'ai' ? 'model' : 'user',
+        parts: [{ text: msg.text }]
+      }));
 
-    const result = await model.generateContent(prompt);
+    const chatSession = model.startChat({
+      history: historyForGemini,
+      generationConfig: {
+        maxOutputTokens: 1000,
+      },
+    });
+
+    const result = await chatSession.sendMessage(message);
     const response = await result.response;
-    return response.text() || "Desculpe, não consegui processar sua mensagem agora.";
+    return response.text();
   } catch (error) {
-    console.error("Gemini Error:", error);
-    return "Houve um erro na comunicação com a IA.";
+    console.error("Gemini Chat Error:", error);
+    return "Desculpe, estou tendo dificuldades para conectar com seu assistente financeiro no momento. Tente novamente em instantes.";
   }
 };
 

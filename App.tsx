@@ -22,11 +22,12 @@ import { ICON_LIBRARY, DEFAULT_CATEGORIES, COLOR_PALETTE } from './constants';
 import { getDailyQuote, smartParseTransaction, chatWithAssistant, getExpenseTips } from './services/geminiService';
 
 import { LoginPage } from './components/auth/LoginPage';
-
 import { SignUpPage } from './components/auth/SignUpPage';
 import { TermsOfUse } from './components/legal/TermsOfUse';
 import { PrivacyPolicy } from './components/legal/PrivacyPolicy';
 import { ProfileModal } from './components/profile/ProfileModal';
+import { RegeChat } from './components/ai/RegeChat';
+import { SmartTransactionInput } from './components/ai/SmartTransactionInput';
 
 // --- MAIN APP COMPONENT ---
 export default function App() {
@@ -66,22 +67,16 @@ export default function App() {
   const [newCategory, setNewCategory] = useState('food');
   const [newDate, setNewDate] = useState(new Date().toISOString().split('T')[0]);
 
-  const [aiInput, setAiInput] = useState('');
-  const [isAiLoading, setIsAiLoading] = useState(false);
-  const [aiMode, setAiMode] = useState(true);
-  const [isListening, setIsListening] = useState(false);
+  const [dailyQuote, setDailyQuote] = useState('');
 
-  const [chatInput, setChatInput] = useState('');
+  // Rege IA chat history state managed in App to persist between opens if needed, 
+  // or can be localized if desired. Keeping it here for now to avoid losing history on modal toggle.
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([
     { role: 'ai', text: 'Olá! Sou o Rege, seu assistente financeiro. Como posso ajudar com suas finanças hoje? 🤖💰' }
   ]);
-  const [isChatLoading, setIsChatLoading] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
 
   const [aiTips, setAiTips] = useState<string | null>(null);
   const [isTipsLoading, setIsTipsLoading] = useState(false);
-
-  const [dailyQuote, setDailyQuote] = useState('');
 
   // Fix: Changed exportMenuRef from HTMLDivElement to HTMLButtonElement as it's attached to a button on line 735.
   const exportMenuRef = useRef<HTMLButtonElement>(null);
@@ -350,64 +345,21 @@ export default function App() {
 
   const resetForm = () => {
     setNewTitle(''); setNewAmount(''); setNewType(TransactionType.EXPENSE); setNewCategory('food');
-    setNewDate(new Date().toISOString().split('T')[0]); setAiInput(''); setAiMode(true);
+    setNewDate(new Date().toISOString().split('T')[0]); setAiMode(true);
     setIsCategoryManagerOpen(false); setIsEditMode(false);
   };
 
-  const handleAiSmartAdd = async () => {
-    if (!aiInput.trim()) return;
-    setIsAiLoading(true);
-    try {
-      const result = await smartParseTransaction(aiInput);
-      if (result) {
-        if (result.title) setNewTitle(result.title);
-        if (result.amount) setNewAmount(result.amount.toString());
-        if (result.type) setNewType(result.type as TransactionType);
-        if (result.category) setNewCategory(result.category);
-        if (result.date) setNewDate(result.date);
-        setAiMode(false);
-      }
-    } finally {
-      setIsAiLoading(false);
+  const handleAiParsedResult = (result: any) => {
+    if (result) {
+      if (result.title) setNewTitle(result.title);
+      if (result.amount) setNewAmount(result.amount.toString());
+      if (result.type) setNewType(result.type as TransactionType);
+      if (result.category) setNewCategory(result.category);
+      if (result.date) setNewDate(result.date);
+      setAiMode(false);
     }
   };
 
-  const startListening = () => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'pt-BR';
-    recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => setIsListening(false);
-    recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      setAiInput(prev => prev ? prev + " " + transcript : transcript);
-    };
-    recognition.start();
-  };
-
-  const handleSendChatMessage = async () => {
-    if (!chatInput.trim() || isChatLoading) return;
-    const userMsg = chatInput.trim();
-    setChatInput('');
-    setChatHistory(prev => [...prev, { role: 'user', text: userMsg }]);
-    setIsChatLoading(true);
-    try {
-      const contextData = {
-        balance: totalBalance,
-        recentTransactions: transactions.slice(0, 10).map(t => ({
-          title: t.title, amount: t.amount, type: t.type,
-          category: categories[t.category]?.label || 'Outros', date: t.date
-        }))
-      };
-      const aiResponse = await chatWithAssistant(chatHistory, userMsg, contextData);
-      setChatHistory(prev => [...prev, { role: 'ai', text: aiResponse }]);
-    } catch (error) {
-      setChatHistory(prev => [...prev, { role: 'ai', text: "Desculpe, tive um problema ao processar sua solicitação." }]);
-    } finally {
-      setIsChatLoading(false);
-    }
-  };
 
   const handleGenerateTips = async () => {
     if (!topExpense) return;
@@ -712,15 +664,7 @@ export default function App() {
                       <button onClick={() => setAiMode(false)} className={`flex-1 py-3 text-[10px] font-black uppercase rounded-2xl border-2 transition-all ${!aiMode ? 'border-zinc-700 bg-zinc-800 text-white' : 'border-zinc-900 text-zinc-600'}`}>Manual</button>
                     </div>
                     {aiMode ? (
-                      <div className="space-y-6">
-                        <textarea placeholder="Ex: Recebi meu salário de 3500 reais hoje..." className="w-full bg-zinc-900 border-2 border-zinc-800 text-white rounded-[2rem] p-6 h-40 resize-none text-lg font-medium focus:outline-none" value={aiInput} onChange={(e) => setAiInput(e.target.value)} />
-                        <div className="flex gap-3">
-                          <button onClick={startListening} className={`flex-1 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-zinc-900 text-zinc-400'}`}><Mic size={18} /> Voz</button>
-                          <button onClick={handleAiSmartAdd} disabled={isAiLoading || !aiInput.trim()} className="flex-[2] bg-violet-600 text-white font-black text-xs uppercase tracking-widest py-4 rounded-2xl flex items-center justify-center gap-2">
-                            {isAiLoading ? <Loader2 className="animate-spin" /> : <><Sparkles size={16} /> Processar</>}
-                          </button>
-                        </div>
-                      </div>
+                      <SmartTransactionInput onParsed={handleAiParsedResult} />
                     ) : (
                       <form onSubmit={handleAddTransaction} className="space-y-6">
                         <div>
@@ -785,51 +729,16 @@ export default function App() {
         {isAssistantOpen && (
           <div className="fixed inset-0 z-50 flex items-end justify-center p-0">
             <div className="absolute inset-0 bg-black/95 backdrop-blur-sm" onClick={() => setIsAssistantOpen(false)} />
-            <div className="bg-zinc-950 w-full max-w-sm rounded-t-[3rem] border-t border-zinc-800 shadow-2xl relative z-10 flex flex-col h-[90vh]">
-              <div className="p-8 border-b border-zinc-900 flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-violet-600/10 rounded-xl text-violet-400"><Bot size={20} /></div>
-                  <h3 className="font-black text-white uppercase tracking-tighter">Rege IA</h3>
-                </div>
-                <button onClick={() => setIsAssistantOpen(false)} className="text-zinc-600"><X size={24} /></button>
-              </div>
-              <div className="flex-1 overflow-y-auto p-8 space-y-4 custom-scrollbar">
-                {chatHistory.map((m, i) => (
-                  <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[85%] px-5 py-3 rounded-2xl text-sm ${m.role === 'user' ? 'bg-violet-600 text-white' : 'bg-zinc-900 text-zinc-300'}`}>{m.text}</div>
-                  </div>
-                ))}
-                {isChatLoading && (
-                  <div className="flex justify-start">
-                    <div className="px-5 py-3 rounded-2xl bg-zinc-900 text-zinc-500 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
-                      <Loader2 size={12} className="animate-spin" /> Digitando...
-                    </div>
-                  </div>
-                )}
-                <div ref={chatEndRef} />
-              </div>
-              <div className="p-4 border-t border-zinc-900 bg-zinc-950">
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSendChatMessage()}
-                    data-testid="chat-input"
-                    placeholder="Pergunte qualquer coisa..."
-                    className="w-full bg-zinc-900 text-white rounded-2xl py-4 pl-5 pr-14 focus:outline-none focus:ring-2 focus:ring-violet-600/50 transition-all font-medium"
-                  />
-                  <button
-                    onClick={handleSendChatMessage}
-                    disabled={!chatInput.trim() || isChatLoading}
-                    data-testid="chat-send-btn"
-                    className="absolute right-2 top-2 p-2 bg-violet-600 text-white rounded-xl hover:bg-violet-700 disabled:opacity-50 disabled:hover:bg-violet-600 transition-all"
-                  >
-                    <Send size={20} />
-                  </button>
-                </div>
-              </div>
-            </div>
+            <RegeChat
+              onClose={() => setIsAssistantOpen(false)}
+              totalBalance={totalBalance}
+              recentTransactions={transactions.slice(0, 10).map(t => ({
+                title: t.title, amount: t.amount, type: t.type,
+                category: categories[t.category]?.label || 'Outros', date: t.date
+              }))}
+              chatHistory={chatHistory}
+              setChatHistory={setChatHistory}
+            />
           </div>
         )}
         {/* Modal: Analysis/Statistics */}
