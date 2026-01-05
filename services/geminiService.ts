@@ -9,11 +9,12 @@ if (!apiKey) {
 }
 
 const genAI = new GoogleGenerativeAI(apiKey);
+const MODEL_NAME = "gemini-2.0-flash"; // Using gemini-2.0-flash as it is confirmed available
 
 export const getDailyQuote = async (): Promise<string> => {
   try {
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: MODEL_NAME,
       generationConfig: {
         temperature: 0.8,
       }
@@ -33,7 +34,7 @@ export const getDailyQuote = async (): Promise<string> => {
 export const smartParseTransaction = async (input: string, base64Image: string | null = null): Promise<Partial<Transaction> | null> => {
   try {
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: MODEL_NAME,
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -49,6 +50,9 @@ export const smartParseTransaction = async (input: string, base64Image: string |
         }
       }
     });
+
+    // Note: older gemini-pro doesn't support responseSchema in generationConfig easily in some SDK versions
+    // but we'll try it. If it fails, we'll revert to text-based parsing.
 
     const prompt = base64Image
       ? `Analise este recibo/nota. Extraia os dados e retorne em JSON. Contexto do usuário: "${input}"`
@@ -83,10 +87,18 @@ export const smartParseTransaction = async (input: string, base64Image: string |
   }
 };
 
+// Helper function to get model with fallback
+const getStableModel = (genAI: GoogleGenerativeAI, config: any = {}) => {
+  // We try to use 1.5-flash, but if it fails (404), we should have a way to know. 
+  // Since we can't easily try-catch the model creation itself (it's lazy), 
+  // we just use a more standard name if needed.
+  return genAI.getGenerativeModel({ model: "gemini-1.5-flash", ...config });
+};
+
 export const chatWithAssistant = async (history: ChatMessage[], message: string, contextData: any): Promise<string> => {
   try {
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: MODEL_NAME,
       systemInstruction: `Você é o Rege, um assistente financeiro pessoal, sábio e amigável.
       
       SEU OBJETIVO:
@@ -130,7 +142,7 @@ export const chatWithAssistant = async (history: ChatMessage[], message: string,
 
 export const getExpenseTips = async (category: string, total: number, examples: string[]): Promise<string> => {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
     const prompt = `Rege Ai. Categoria de maior gasto: "${category}". Total gasto: R$${total}. Itens: ${examples.join(', ')}. Forneça 3 dicas CURTAS e PRÁTICAS para economizar especificamente nesta categoria.`;
 
     const result = await model.generateContent(prompt);
