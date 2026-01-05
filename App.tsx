@@ -66,6 +66,7 @@ export default function App() {
   const [newType, setNewType] = useState<TransactionType>(TransactionType.EXPENSE);
   const [newCategory, setNewCategory] = useState('food');
   const [newDate, setNewDate] = useState(new Date().toISOString().split('T')[0]);
+  const [aiMode, setAiMode] = useState(true);
 
   const [dailyQuote, setDailyQuote] = useState('');
 
