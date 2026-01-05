@@ -9,7 +9,7 @@ if (!apiKey) {
 }
 
 const genAI = new GoogleGenerativeAI(apiKey);
-const MODEL_NAME = "gemini-2.0-flash"; // Using gemini-2.0-flash as it is confirmed available
+const MODEL_NAME = "gemini-2.0-flash-lite"; // Confirmed stable with active quota
 
 export const getDailyQuote = async (): Promise<string> => {
   try {
