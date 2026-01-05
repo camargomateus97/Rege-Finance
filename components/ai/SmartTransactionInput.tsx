@@ -12,15 +12,20 @@ export const SmartTransactionInput: React.FC<SmartTransactionInputProps> = ({ on
     const [aiInput, setAiInput] = useState('');
     const [isAiLoading, setIsAiLoading] = useState(false);
     const [isListening, setIsListening] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const handleAiSmartAdd = async () => {
         if (!aiInput.trim()) return;
         setIsAiLoading(true);
+        setError(null);
         try {
             const result = await smartParseTransaction(aiInput);
             if (result) {
                 onParsed(result);
             }
+        } catch (err: any) {
+            console.error("SmartAdd Error:", err);
+            setError(err.message || "Erro de conexão com a Rege IA.");
         } finally {
             setIsAiLoading(false);
         }
@@ -61,8 +66,8 @@ export const SmartTransactionInput: React.FC<SmartTransactionInputProps> = ({ on
                 <button
                     onClick={startListening}
                     className={`flex-1 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all ${isListening
-                            ? 'bg-rose-500 text-white animate-pulse'
-                            : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800'
+                        ? 'bg-rose-500 text-white animate-pulse'
+                        : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800'
                         }`}
                 >
                     <Mic size={18} /> {isListening ? 'Ouvindo...' : 'Voz'}
@@ -83,6 +88,12 @@ export const SmartTransactionInput: React.FC<SmartTransactionInputProps> = ({ on
                     )}
                 </button>
             </div>
+
+            {error && (
+                <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl animate-in fade-in zoom-in-95 duration-200">
+                    <p className="text-xs font-bold text-rose-400 text-center">{error}</p>
+                </div>
+            )}
 
             <div className="p-4 bg-violet-600/5 rounded-2xl border border-violet-600/10">
                 <p className="text-[10px] text-violet-400 font-bold uppercase tracking-widest text-center">

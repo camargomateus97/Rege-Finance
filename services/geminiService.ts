@@ -69,9 +69,17 @@ export const smartParseTransaction = async (input: string, base64Image: string |
     const text = response.text();
     const data = JSON.parse(text || '{}');
     return data;
-  } catch (error) {
-    console.error("Gemini Error:", error);
-    return null;
+  } catch (error: any) {
+    console.error("Gemini Error (smartParseTransaction):", error);
+    let errorMessage = "Erro desconhecido na Rege IA.";
+
+    if (!apiKey) {
+      errorMessage = "Chave de API (GEMINI_API_KEY) não encontrada no ambiente.";
+    } else if (error.message) {
+      errorMessage = `Erro da API: ${error.message}`;
+    }
+
+    throw new Error(errorMessage);
   }
 };
 
